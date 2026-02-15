@@ -20,7 +20,7 @@
 	};
 
 	aliases {
-		spi0 = &snor;
+		spi0 = &spi;
 	};
 
 	memory@40000000 {
@@ -183,7 +183,7 @@
 	};
 };
 
-&snor {
+&spi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&snor_pins>;
 	status = "okay";
