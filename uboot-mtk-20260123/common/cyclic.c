@@ -22,6 +22,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 void hw_watchdog_reset(void);
 
+void __weak schedule_hook(void)
+{
+}
+
 struct hlist_head *cyclic_get_list(void)
 {
 	/* Silence "discards 'volatile' qualifier" warning. */
