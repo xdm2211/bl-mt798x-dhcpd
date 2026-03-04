@@ -1069,6 +1069,75 @@ function flashSelectTarget(val) {
     return false
 }
 
+function flashGetDeviceNameByStorage(storage) {
+    var bi = APP_STATE && APP_STATE.backupinfo ? APP_STATE.backupinfo : null;
+    var mmcName = "";
+    var mtdName = "";
+    if (bi && bi.mmc && bi.mmc.present) {
+        mmcName = [bi.mmc.vendor || "", bi.mmc.product || ""].join(" ").trim();
+        if (!mmcName) mmcName = "MMC";
+    }
+    if (bi && bi.mtd && bi.mtd.present) {
+        mtdName = (bi.mtd.model || "").trim();
+        if (!mtdName) mtdName = "MTD";
+    }
+    if (storage === "mtd") return mtdName || "MTD";
+    if (storage === "mmc") return mmcName || "MMC";
+    return mtdName || mmcName || "device";
+}
+
+function flashBuildErasePlan() {
+    var target = document.getElementById("flash_target");
+    var startEl = document.getElementById("flash_start");
+    var endEl = document.getElementById("flash_end");
+    var v, seg, storage, tname, isRaw, startStr, endStr, hasStart, hasEnd, start, end;
+    var targetLabel, detail;
+
+    if (!target || !target.value)
+        return { error: t("flash.error.no_target") };
+
+    v = String(target.value);
+    seg = v.split(":");
+    storage = seg.length > 1 ? seg[0] : "auto";
+    tname = seg.length > 1 ? seg.slice(1).join(":") : v;
+    isRaw = tname === "raw";
+
+    startStr = startEl && startEl.value ? String(startEl.value).trim() : "";
+    endStr = endEl && endEl.value ? String(endEl.value).trim() : "";
+    hasStart = !!startStr;
+    hasEnd = !!endStr;
+
+    if (hasStart !== hasEnd)
+        return { error: t("flash.error.bad_range") };
+
+    if (hasStart && hasEnd) {
+        start = parseUserLen(startStr);
+        end = parseUserLen(endStr);
+        if (start === null || end === null || end <= start)
+            return { error: t("flash.error.bad_range") };
+    }
+
+    if (isRaw && !hasStart)
+        return { error: t("flash.error.bad_range") + " (raw target requires start/end)" };
+
+    targetLabel = isRaw ? "" : (tname + " 分区");
+    if (hasStart)
+        detail = isRaw ? ("0x" + start.toString(16) + "~0x" + end.toString(16)) :
+            (targetLabel + " 的 0x" + start.toString(16) + "~0x" + end.toString(16));
+    else
+        detail = targetLabel;
+
+    return {
+        storage: storage,
+        target: v,
+        hasRange: hasStart,
+        start: hasStart ? start : null,
+        end: hasStart ? end : null,
+        detail: detail,
+        deviceName: flashGetDeviceNameByStorage(storage)
+    };
+}
+
 function flashInit() {
     var target = document.getElementById("flash_target");
     var start = document.getElementById("flash_start");
@@ -1222,6 +1291,59 @@ async function flashWrite() {
         flashSetStatus(t("flash.status.done"))
     } catch (e) {
         flashSetStatus(t("flash.status.error") + " " + (e && e.message ? e.message : String(e)))
+    }
+}
+
+async function flashErase() {
+    var plan = flashBuildErasePlan();
+    var fd, r, txt, j;
+
+    if (plan.error) {
+        alert(plan.error);
+        return;
+    }
+
+    if (!confirm(t("flash.confirm.erase")))
+        return;
+
+    var confirmDetail = t("flash.confirm.erase_detail")
+        .replace("{device}", plan.deviceName)
+        .replace("{detail}", plan.detail);
+
+    if (!confirm(confirmDetail))
+        return;
+
+    try {
+        flashSetStatus(t("flash.status.erasing"));
+        fd = new FormData();
+        fd.append("op", "erase");
+        fd.append("storage", "auto");
+        fd.append("target", plan.target);
+        if (plan.hasRange) {
+            fd.append("start", "0x" + plan.start.toString(16));
+            fd.append("end", "0x" + plan.end.toString(16));
+        }
+
+        r = await fetch("/flash/erase", { method: "POST", body: fd });
+        txt = await r.text();
+        if (!r.ok) {
+            flashSetStatus(t("flash.status.http") + " " + r.status + (txt ? ": " + txt : ""));
+            return;
+        }
+
+        try { j = JSON.parse(txt); } catch (e) {
+            flashSetStatus(t("flash.status.error") + " parse");
+            return;
+        }
+
+        if (!j || !j.ok) {
+            flashSetStatus(t("flash.status.error") + " " + (j && j.error ? j.error : ""));
+            return;
+        }
+
+        flashSetStatus(t("flash.status.done"));
+    } catch (e) {
+        flashSetStatus(t("flash.status.error") + " " + (e && e.message ? e.message : String(e)));
     }
 }
 

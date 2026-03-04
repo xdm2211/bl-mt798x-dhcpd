@@ -593,6 +593,13 @@ input[type="button"].button-warn {
     box-shadow: 0 10px 24px rgba(245, 158, 11, 0.22);
 }
 
+button.button.button-danger,
+input[type="button"].button-danger {
+    border: 1px solid rgba(220, 38, 38, 0.48);
+    background: linear-gradient(180deg, rgba(220, 38, 38, 0.95), rgba(185, 28, 28, 0.86));
+    box-shadow: 0 12px 26px rgba(220, 38, 38, 0.30);
+}
+
 input[type="button"]:hover,
 button.button:hover {
     filter: brightness(1.06);

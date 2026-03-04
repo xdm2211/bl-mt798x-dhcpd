@@ -862,6 +862,7 @@ int start_web_failsafe(void)
 	httpd_register_uri_handler(inst, "/flash.html", &html_handler, NULL);
 	httpd_register_uri_handler(inst, "/flash/read", &flash_handler, NULL);
 	httpd_register_uri_handler(inst, "/flash/write", &flash_handler, NULL);
+	httpd_register_uri_handler(inst, "/flash/erase", &flash_handler, NULL);
 	httpd_register_uri_handler(inst, "/flash/restore", &flash_handler, NULL);
 #endif
 #ifdef CONFIG_WEBUI_FAILSAFE_ENV
