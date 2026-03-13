@@ -57,7 +57,7 @@ jobs:
       contents: write
 
     steps:
-      - name: 初始化编译环境
+      - name: Initialize build environment
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -71,20 +71,20 @@ jobs:
             echo "UPLOAD_RELEASE=false" >> $GITHUB_ENV
           fi
 
-      - name: 下载源码
+      - name: Checkout source
         working-directory: /workdir
         run: |
           df -hT $PWD
           git clone $REPO_URL -b $REPO_BRANCH bl-mt798x-dhcpd
           ln -sf /workdir/bl-mt798x-dhcpd $GITHUB_WORKSPACE/bl-mt798x-dhcpd
 
-      - name: 安装 ATF 编译依赖
+      - name: Install ATF build dependencies
         shell: bash
         run: |
           set -euo pipefail
           sudo -E apt-get -qq install $(cat bl-mt798x-dhcpd/depends/ubuntu-22.04)
 
-      - name: 准备 ATF 输入
+      - name: Prepare ATF inputs
         shell: bash
         run: |
           set -euo pipefail
@@ -92,24 +92,24 @@ jobs:
 
           if [ "${{ github.event.inputs.ATF_OC }}" = "true" ]; then
             if [ -d "mt798x_atf/mt7981" ]; then
-              echo "启用mt7981 超频配置"
+              echo "Enable mt7981 OC profile"
               shopt -s dotglob nullglob
               cp -af mt798x_atf/mt7981/* mt798x_atf/ || true
             else
-              echo "Warning: 未找到 mt798x_atf/mt7981 目录，跳过"
+              echo "Warning: mt798x_atf/mt7981 not found, skipping"
             fi
             if [ -d "mt798x_atf/mt7986" ]; then
-              echo "启用mt7986 超频配置"
+              echo "Enable mt7986 OC profile"
               shopt -s dotglob nullglob
               cp -af mt798x_atf/mt7986/* mt798x_atf/ || true
             else
-              echo "Warning: 未找到 mt798x_atf/mt7986 目录，跳过"
+              echo "Warning: mt798x_atf/mt7986 not found, skipping"
             fi
           else
-            echo "未启用超频配置（ATF_OC=false）"
+            echo "OC profile not enabled (ATF_OC=false)"
           fi
 
-      - name: 编译 ATF
+      - name: Build ATF
         id: atf
         shell: bash
         run: |
@@ -122,7 +122,7 @@ jobs:
           echo "FILE_DATE=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
           echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: 整理文件并重命名
+      - name: Organize files and rename
         id: organize
         if: env.UPLOAD_ARTIFACT == 'true' && !cancelled()
         shell: bash
@@ -132,7 +132,7 @@ jobs:
 
           TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 
-          # 尝试给 output_bl2 文件打时间戳
+          # Try to timestamp output_bl2 files
           if [ -d "output_bl2" ]; then
             rename "s/(.*)\.(.*)/\$1_${TIMESTAMP}.\$2/" output_bl2/* || true
           fi
@@ -142,14 +142,14 @@ jobs:
             cp -r output_bl2/* upload/ || true
           fi
 
-          # 也把模板/源文件打包一份，便于追溯
+          # Also archive the entire mt798x_atf directory for reference if it exists
           if [ -d "mt798x_atf" ]; then
             tar -czf upload/mt798x_atf_${TIMESTAMP}.tar.gz mt798x_atf || true
           fi
 
           echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: 打包上传到Actions Artifacts
+      - name: Upload artifacts to Actions
         uses: actions/upload-artifact@main
         if: steps.organize.outputs.status == 'success' && !cancelled()
         with:
@@ -157,7 +157,7 @@ jobs:
           path: |
             bl-mt798x-dhcpd/upload/*
 
-      - name: 生成Release说明
+      - name: Generate release notes
         id: tag
         if: env.UPLOAD_RELEASE == 'true' && !cancelled()
         shell: bash
@@ -165,21 +165,22 @@ jobs:
           set -euo pipefail
           touch release.txt
 
-          echo "- 提交来源: ${{ github.sha }}" >> release.txt
-          echo "- 使用源码: ${{ env.REPO_URL }}" >> release.txt
-          echo "- 使用分支: ${{ env.REPO_BRANCH }}" >> release.txt
-          echo "- 使用ATF版本: ${{ github.event.inputs.ATF_VERSION }}" >> release.txt
+          echo "- Commit: ${{ github.sha }}" >> release.txt
+          echo "- Source repo: ${{ env.REPO_URL }}" >> release.txt
+          echo "- Branch: ${{ env.REPO_BRANCH }}" >> release.txt
+          echo "- ATF version: ${{ github.event.inputs.ATF_VERSION }}" >> release.txt
           if [ "${{ github.event.inputs.ATF_OC }}" = "true" ]; then
-            echo "- 已启用: 编译超频配置" >> release.txt
+            echo "- OC profile: Enabled" >> release.txt
           else
-            echo "- 未启用: 编译超频配置" >> release.txt
+            echo "- OC profile: Disabled" >> release.txt
           fi
-          echo "- 编译时间: ${{ env.FILE_DATE }}" >> release.txt
+          echo "- Build time: ${{ env.FILE_DATE }}" >> release.txt
 
+          echo "PLEASE SEE THE README FOR USAGE INSTRUCTIONS AND DISCLAIMERS." >> release.txt
           echo "release_tag=${{ env.FILE_DATE }}-bl2-preloader" >> $GITHUB_OUTPUT
           echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: 发布至Release
+      - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2.1.0
         if: steps.tag.outputs.status == 'success' && !cancelled() && env.UPLOAD_RELEASE == 'true'
         env:

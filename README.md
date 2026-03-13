@@ -89,7 +89,6 @@ Generated files will be in the `output`
   - [x] Version 2022/2023/2024/2025/2026/SP1/all
   - [ ] VARIANT
   - [ ] Extra Options
-  - [ ] Custom DHCPD
   > VERSION:all only for single-board
 - [x] Build GPT
   - [x] Official layout
@@ -97,8 +96,6 @@ Generated files will be in the `output`
 - [x] Build BL2
   - [x] RAMBOOT
   - [ ] OC profiles
-
-> Although you can customize the DHCPD subnet, the mask is fixed to "255.255.255.0", but not recommend, because you need synchronous change your board configs.
 
 ## Generate GPT with python2.7
 
