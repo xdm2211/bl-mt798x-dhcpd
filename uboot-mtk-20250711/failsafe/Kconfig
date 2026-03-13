@@ -23,8 +23,8 @@ config WEBUI_FAILSAFE_UI_NEW
 config WEBUI_FAILSAFE_UI_MTK
 	bool "MTK UI (fsdata_mtk)"
 
-config WEBUI_FAILSAFE_UI_OLD
-	bool "Old UI (fsdata_old)"
+config WEBUI_FAILSAFE_UI_GL
+	bool "GL UI (fsdata_gl)"
 
 endchoice
 

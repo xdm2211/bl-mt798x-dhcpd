@@ -30,7 +30,8 @@ You can configure the features you need.
 - Failsafe Web UI style:
   - [x] WEBUI_FAILSAFE_UI_NEW
     - [x] WEBUI_FAILSAFE_I18N
-  - [ ] WEBUI_FAILSAFE_UI_OLD
+  - [ ] WEBUI_FAILSAFE_UI_GL
+  - [ ] WEBUI_FAILSAFE_UI_MTK
 - [x] WEBUI_FAILSAFE_ADVANCED - Enable advanced features
   - [ ] WEBUI_FAILSAFE_SIMG - Enable Single Image upgrade
   - [x] WEBUI_FAILSAFE_FACTORY - Enable factory (RF) update

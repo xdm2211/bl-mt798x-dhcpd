@@ -2,8 +2,8 @@
 
 ifeq ($(CONFIG_XPL_BUILD),)
 
-ifeq ($(CONFIG_WEBUI_FAILSAFE_UI_OLD),y)
-obj-y += fsdata_old/
+ifeq ($(CONFIG_WEBUI_FAILSAFE_UI_GL),y)
+obj-y += fsdata_gl/
 else ifeq ($(CONFIG_WEBUI_FAILSAFE_UI_MTK),y)
 obj-y += fsdata_mtk/
 else
