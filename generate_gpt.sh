@@ -4,7 +4,7 @@ input_folder="./mt798x_gpt"
 input_folder_show="./mt798x_gpt_bin"
 output_folder="./output_gpt"
 
-VERSION=${VERSION:-2025}
+VERSION=${VERSION:-2024}
 
 if [ "$VERSION" = "2022" ]; then
     tools_folder="./atf-20220606-637ba581b/tools/dev/gpt_editor"

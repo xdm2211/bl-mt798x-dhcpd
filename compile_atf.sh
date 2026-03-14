@@ -6,7 +6,7 @@ ATFCFG_DIR="${ATFCFG_DIR:-mt798x_atf}"
 CFG_SUBDIR="${CFG_SUBDIR:-}"
 OUTPUT_DIR="${OUTPUT_DIR:-output_bl2}"
 
-VERSION=${VERSION:-2025}
+VERSION=${VERSION:-2024}
 
 if [ -z "$ATF_DIR" ]; then
     if [ "$VERSION" = "2022" ]; then

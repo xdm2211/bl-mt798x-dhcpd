@@ -5,7 +5,7 @@ AUTHOR="Yuzhii"
 TOOLCHAIN=aarch64-linux-gnu-
 
 # Default selection
-VERSION=${VERSION:-2025}
+VERSION=${VERSION:-2024}
 VARIANT=${VARIANT:-default}
 FSTHEME=${FSTHEME:-new}
 fixedparts=${FIXED_MTDPARTS:-1}
