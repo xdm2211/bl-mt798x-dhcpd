@@ -1068,11 +1068,16 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
 static int airoha_eth_bind(struct udevice *dev)
 {
 	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
+	const char *mdio_driver;
 	ofnode switch_node, mdio_node;
 	struct udevice *mdio_dev;
 	int ret = 0;
 
-	if (!CONFIG_IS_ENABLED(MDIO_MT7531_MMIO))
+	if (CONFIG_IS_ENABLED(MDIO_MT7531_MMIO))
+		mdio_driver = "mt7531-mdio-mmio";
+	else if (CONFIG_IS_ENABLED(MDIO_MT7531))
+		mdio_driver = "mt7531-mdio";
+	else
 		return 0;
 
 	switch_node = ofnode_by_compatible(ofnode_null(),
@@ -1088,37 +1093,7 @@ static int airoha_eth_bind(struct udevice *dev)
 		return 0;
 	}
 
-	ret = device_bind_driver_to_node(dev, "mt7531-mdio-mmio", "mdio",
-					 mdio_node, &mdio_dev);
-	if (ret)
-		debug("Warning: failed to bind mdio controller\n");
-
-	return 0;
-}
-
-static int airoha_eth_bind(struct udevice *dev)
-{
-	ofnode switch_node, mdio_node;
-	struct udevice *mdio_dev;
-	int ret = 0;
-
-	if (!CONFIG_IS_ENABLED(MDIO_MT7531))
-		return 0;
-
-	switch_node = ofnode_by_compatible(ofnode_null(),
-					   "airoha,en7581-switch");
-	if (!ofnode_valid(switch_node)) {
-		debug("Warning: missing switch node\n");
-		return 0;
-	}
-
-	mdio_node = ofnode_find_subnode(switch_node, "mdio");
-	if (!ofnode_valid(mdio_node)) {
-		debug("Warning: missing mdio node\n");
-		return 0;
-	}
-
-	ret = device_bind_driver_to_node(dev, "mt7531-mdio", "mdio",
+	ret = device_bind_driver_to_node(dev, mdio_driver, "mdio",
 					 mdio_node, &mdio_dev);
 	if (ret)
 		debug("Warning: failed to bind mdio controller\n");
