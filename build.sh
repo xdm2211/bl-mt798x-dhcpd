@@ -5,32 +5,16 @@ AUTHOR="Yuzhii"
 TOOLCHAIN=aarch64-linux-gnu-
 
 # Default selection
-VERSION=${VERSION:-2025}
+VERSION=${VERSION:-2026}
 VARIANT=${VARIANT:-default}
 FSTHEME=${FSTHEME:-new}
 fixedparts=${FIXED_MTDPARTS:-1}
 multilayout=${MULTI_LAYOUT:-0}
 simg=${SIMG:-0}
 
-if [ "$VERSION" = "2022" ]; then
-    UBOOT_DIR=uboot-mtk-20220606
-    ATF_DIR=atf-20220606-637ba581b
-elif [ "$VERSION" = "2023" ]; then
-    UBOOT_DIR=uboot-mtk-20230718-09eda825
-    ATF_DIR=atf-20231013-0ea67d76a
-elif [ "$VERSION" = "2024" ]; then
-    UBOOT_DIR=uboot-mtk-20230718-09eda825
-    ATF_DIR=atf-20240117-bacca82a8
-elif [ "$VERSION" = "2025" ]; then
-    UBOOT_DIR=uboot-mtk-20250711
-    ATF_DIR=atf-20250711
-elif [ "$VERSION" = "2026" ]; then
+if [ "$VERSION" = "2026" ]; then
     UBOOT_DIR=uboot-mtk-20260123
     ATF_DIR=atf-20260123
-elif [ "$VERSION" = "SP1" ] || [ "$VERSION" = "sp1" ]; then
-	VERSION="SP1"
-    UBOOT_DIR=uboot-mtk-20250711
-    ATF_DIR=atf-20240117-bacca82a8
 else
     echo "Error: Unsupported VERSION. Please specify VERSION=2022/2023/2024/2025."
     exit 1
