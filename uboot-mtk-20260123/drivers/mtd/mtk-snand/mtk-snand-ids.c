@@ -115,6 +115,10 @@ static const struct snand_flash_info snand_flash_ids[] = {
 		   SNAND_MEMORG_1G_2K_64,
 		   &snand_cap_read_from_cache_quad_q2d,
 		   &snand_cap_program_load_x4),
+	SNAND_INFO("GD5F1GQ5UExxG", SNAND_ID(SNAND_ID_ADDR, 0xc8, 0x51),
+		   SNAND_MEMORG_1G_2K_128,
+		   &snand_cap_read_from_cache_quad,
+		   &snand_cap_program_load_x4),
 	SNAND_INFO("GD5F2GQ4UExIG", SNAND_ID(SNAND_ID_ADDR, 0xc8, 0xd2),
 		   SNAND_MEMORG_2G_2K_128,
 		   &snand_cap_read_from_cache_quad_q2d,
@@ -427,7 +431,7 @@ static const struct snand_flash_info snand_flash_ids[] = {
 
 	SNAND_INFO("FM35Q1GA", SNAND_ID(SNAND_ID_DYMMY, 0xe5, 0x71),
 		   SNAND_MEMORG_1G_2K_64,
-		   &snand_cap_read_from_cache_x4,
+		   &snand_cap_read_from_cache_x4_only,
 		   &snand_cap_program_load_x4),
 
 	SNAND_INFO("PN26G01A", SNAND_ID(SNAND_ID_DYMMY, 0xa1, 0xe1),
