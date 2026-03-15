@@ -143,7 +143,8 @@ static bool failsafe_auto_reboot_enabled(void)
 	const char *val = env_get("failsafe_auto_reboot");
 
 	if (!val || !val[0])
-		return IS_ENABLED(CONFIG_WEBUI_FAILSAFE_UI_OLD);
+		return IS_ENABLED(CONFIG_WEBUI_FAILSAFE_UI_GL) ||
+		       IS_ENABLED(CONFIG_WEBUI_FAILSAFE_UI_MTK);
 
 	if (!strcmp(val, "1") || !strcasecmp(val, "true") ||
 	    !strcasecmp(val, "yes") || !strcasecmp(val, "on"))
@@ -565,6 +566,16 @@ static void upload_handler(enum httpd_uri_handler_status status,
 		goto done;
 	}
 
+#ifdef CONFIG_WEBUI_FAILSAFE_SIMG
+	fw = httpd_request_find_value(request, "simg");
+	if (fw) {
+		fw_type = FW_TYPE_SIMG;
+		if (failsafe_validate_image(fw->data, fw->size, fw_type))
+			goto fail;
+		goto done;
+	}
+#endif
+
 #ifdef CONFIG_WEBUI_FAILSAFE_FACTORY
 	fw = httpd_request_find_value(request, "factory");
 	if (fw) {
@@ -733,6 +744,8 @@ static void js_handler(enum httpd_uri_handler_status status,
 
 		if (uri && strstr(uri, "i18n.js"))
 			file = "i18n.js";
+		else if (uri && strstr(uri, "themeloader.js"))
+			file = "themeloader.js";
 
 		output_plain_file(response, file);
 		response->info.content_type = "text/javascript";
@@ -840,6 +853,10 @@ int start_web_failsafe(void)
 	httpd_register_uri_handler(inst, "/reboot-failsafe", &reboot_failsafe_handler, NULL);
 	httpd_register_uri_handler(inst, "/reboot.html", &html_handler, NULL);
 	httpd_register_uri_handler(inst, "/sysinfo", &sysinfo_handler, NULL);
+#ifdef CONFIG_WEBUI_FAILSAFE_UI_NEW
+	httpd_register_uri_handler(inst, "/favicon.svg", &picture_handler, NULL);
+	httpd_register_uri_handler(inst, "/themeloader.js", &js_handler, NULL);
+#endif
 #ifdef CONFIG_WEBUI_FAILSAFE_I18N
 	httpd_register_uri_handler(inst, "/i18n.js", &js_handler, NULL);
 #endif
@@ -852,6 +869,7 @@ int start_web_failsafe(void)
 	httpd_register_uri_handler(inst, "/flash.html", &html_handler, NULL);
 	httpd_register_uri_handler(inst, "/flash/read", &flash_handler, NULL);
 	httpd_register_uri_handler(inst, "/flash/write", &flash_handler, NULL);
+	httpd_register_uri_handler(inst, "/flash/erase", &flash_handler, NULL);
 	httpd_register_uri_handler(inst, "/flash/restore", &flash_handler, NULL);
 #endif
 #ifdef CONFIG_WEBUI_FAILSAFE_ENV
@@ -861,6 +879,13 @@ int start_web_failsafe(void)
 	httpd_register_uri_handler(inst, "/env/unset", &env_unset_handler, NULL);
 	httpd_register_uri_handler(inst, "/env/reset", &env_reset_handler, NULL);
 	httpd_register_uri_handler(inst, "/env/restore", &env_restore_handler, NULL);
+#ifdef CONFIG_WEBUI_FAILSAFE_UI_NEW
+	httpd_register_uri_handler(inst, "/theme/get", &theme_get_handler, NULL);
+	httpd_register_uri_handler(inst, "/theme/set", &theme_set_handler, NULL);
+#endif
+#endif
+#ifdef CONFIG_WEBUI_FAILSAFE_SIMG
+	httpd_register_uri_handler(inst, "/simg.html", &html_handler, NULL);
 #endif
 #ifdef CONFIG_WEBUI_FAILSAFE_FACTORY
 	httpd_register_uri_handler(inst, "/factory.html", &html_handler, NULL);
