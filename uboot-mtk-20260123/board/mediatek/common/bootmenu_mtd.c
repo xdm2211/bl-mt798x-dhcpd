@@ -190,8 +190,3 @@ void default_boot_set_defaults(void *fdt)
 #endif
 	mtd_boot_set_defaults(fdt);
 }
-
-int board_late_init(void)
-{
-	return 0;
-}
