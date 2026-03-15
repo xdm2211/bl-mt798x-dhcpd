@@ -49,7 +49,7 @@ else
 fi
 
 if [ -z "$SOC" ] || [ -z "$BOARD" ]; then
-	echo "Usage: SOC=<en7523|an7581|an7583> BOARD=<evb|w1700k> VERSION=2026 $0"
+	echo "Usage: SOC=<en7523|an7552|an7581|an7583> BOARD=<evb|w1700k> VERSION=2026 $0"
 	echo "eg: SOC=en7523 BOARD=evb $0"
 	echo "eg: SOC=an7581 BOARD=evb VERSION=2026 $0"
 	exit 1
@@ -58,6 +58,7 @@ fi
 # Airoha platform target mapping (aligned with OpenWrt Makefile behavior)
 case "${SOC}_${BOARD}" in
 	en7523_evb |\
+	an7552_evb |\
 	an7581_evb |\
 	an7583_evb)
 		UBOOT_CFG="${SOC}_${BOARD}_defconfig"
@@ -78,7 +79,7 @@ esac
 # Auto-select cross toolchain by SOC when TOOLCHAIN is not provided
 if [ -z "$TOOLCHAIN" ]; then
 	case "$SOC" in
-		en7523)
+		en7523|an7552)
 			# EN7523 is ARMv7 (32-bit)
 			TOOLCHAIN="arm-linux-gnueabi-"
 			;;
