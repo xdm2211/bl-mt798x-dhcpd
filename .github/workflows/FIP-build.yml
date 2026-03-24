@@ -19,9 +19,9 @@ on:
         default: 'cmcc_a10'
         type: string
       FIP_VERSION: 
-        description: 'FIP versions (comma-separated, e.g. 2022,2023,2024,2025,2026/all)'
+        description: 'FIP versions (comma-separated, e.g. 2022,2023,2024/all)'
         required: true
-        default: '2025'
+        default: '2024'
         type: string
       REPO_URL:
         description: 'Source repository'
@@ -29,19 +29,10 @@ on:
         default: 'https://github.com/Yuzhii0718/bl-mt798x-dhcpd'
         type: string
       REPO_BRANCH:
-        description: 'Repository branch (auto will pick master for <=2025, mtksoc-20260123 for 2026)'
+        description: 'Repository branch'
         required: true
-        default: 'auto'
+        default: 'master'
         type: string
-      VARIANT:
-        description: 'Build variant (only effective for 2025/2026)'
-        required: false
-        default: 'default'
-        type: choice
-        options:
-          - default
-          - ubootmod
-          - nonmbm
       EXTRA_OPTION:
         description: 'Extra option'
         required: false
@@ -87,10 +78,6 @@ env:
   atf23: atf-20231013-0ea67d76a
   uboot23: uboot-mtk-20230718-09eda825
   atf24: atf-20240117-bacca82a8
-  uboot25: uboot-mtk-20250711
-  atf25: atf-20250711
-  uboot26: uboot-mtk-20260123
-  atf26: atf-20260123
 
 jobs:
   build:
@@ -109,16 +96,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        VARIANT_IN="${{ github.event.inputs.VARIANT }}"
         EXTRA_IN="${{ github.event.inputs.EXTRA_OPTION }}"
-
-        case "$VARIANT_IN" in
-          default|ubootmod|nonmbm) ;;
-          *)
-            echo "Error: invalid VARIANT: '$VARIANT_IN' (expected default/ubootmod/nonmbm)" >&2
-            exit 1
-            ;;
-        esac
 
         case "$EXTRA_IN" in
           default|multi_layout|dis_fixed_mtdparts) ;;
@@ -128,23 +106,9 @@ jobs:
             ;;
         esac
 
-        # Note: VARIANT is injected into build.sh only for 2025/2026 builds; EXTRA_OPTION applies to all versions
         FIP_INPUT="${{ github.event.inputs.FIP_VERSION }}"
         if [[ "$FIP_INPUT" =~ ^(.+)-(mt798[0-9]+)$ ]]; then
           FIP_INPUT="${BASH_REMATCH[1]}"
-        fi
-        if [ "$FIP_INPUT" != "all" ]; then
-          if ! echo ",${FIP_INPUT}," | grep -Eq ',(2025|2026)(,|$)'; then
-            if [ "$VARIANT_IN" != "default" ] || [ "$EXTRA_IN" != "default" ]; then
-              if [ "$VARIANT_IN" != "default" ]; then
-                echo "Note: current FIP_VERSION=$FIP_INPUT does not include 2025/2026; VARIANT will be ignored (EXTRA_OPTION still applies)."
-              fi
-            fi
-          fi
-        fi
-
-        if [ "$VARIANT_IN" = "ubootmod" ] && [ "$EXTRA_IN" = "multi_layout" ]; then
-          echo "Note: VARIANT=ubootmod does not support multi_layout; MULTI_LAYOUT will be forced off."
         fi
 
         if [ "${{ github.event.inputs.pub_release }}" = "false" ]; then
@@ -169,50 +133,7 @@ jobs:
         REPO_URL_IN="$REPO_URL"
         REPO_BRANCH_IN="$REPO_BRANCH_INPUT"
 
-
-        # Auto-detect branch logic: if REPO_BRANCH=auto, then
-        # - if 2026 is included in the selected versions, use mtksoc-20260123
-        # - otherwise, use master
-        FIP_INPUT="${{ github.event.inputs.FIP_VERSION }}"
-        if [[ "$FIP_INPUT" =~ ^(.+)-(mt798[0-9]+)$ ]]; then
-          FIP_INPUT="${BASH_REMATCH[1]}"
-        fi
-
-        if [ "$FIP_INPUT" = "all" ]; then
-          VERSIONS_STR="2022,2023,2024,2025,2026"
-        else
-          VERSIONS_STR="$FIP_INPUT"
-        fi
-        VERSIONS_STR="$(echo "$VERSIONS_STR" | tr -d '[:space:]')"
-
-        has_2026=0
-        total=0
-        IFS=',' read -ra _VERS <<< "$VERSIONS_STR"
-        for v in "${_VERS[@]}"; do
-          [ -z "$v" ] && continue
-          total=$((total+1))
-          if [ "$v" = "2026" ]; then
-            has_2026=1
-          fi
-        done
-
-        if [ -n "$REPO_BRANCH_IN" ] && [ "$REPO_BRANCH_IN" != "auto" ]; then
-          REPO_REF="$REPO_BRANCH_IN"
-        else
-          if [ "$has_2026" -eq 1 ] && [ "$total" -gt 1 ]; then
-            echo "Error: cannot auto-select a single branch when REPO_BRANCH=auto and both 2026 and other versions are selected." >&2
-            echo "Please either:" >&2
-            echo "  - Select only 2026 (or only <=2025), or" >&2
-            echo "  - Manually set REPO_BRANCH to a branch that contains the source for all selected versions." >&2
-            exit 1
-          fi
-
-          if [ "$has_2026" -eq 1 ]; then
-            REPO_REF="mtksoc-20260123"
-          else
-            REPO_REF="master"
-          fi
-        fi
+        REPO_REF="$REPO_BRANCH_IN"
 
         echo "Using source: $REPO_URL_IN (ref: $REPO_REF)"
         git clone --depth 1 --branch "$REPO_REF" "$REPO_URL_IN" bl-mt798x-dhcpd
@@ -288,7 +209,7 @@ jobs:
 
         # Parse the list of versions to process based on FIP_INPUT
         if [ "$FIP_INPUT" = "all" ]; then
-          SUPPORTED_VERSIONS=("2022" "2023" "2024" "2025" "2026")
+          SUPPORTED_VERSIONS=("2022" "2023" "2024")
           echo "Detected 'all', will parse: ${SUPPORTED_VERSIONS[*]}"
         else
           IFS=',' read -ra SUPPORTED_VERSIONS <<< "$FIP_INPUT"
@@ -301,9 +222,6 @@ jobs:
             2022) echo "${{ env.atf22 }}" "${{ env.uboot22 }}" ;;
             2023) echo "${{ env.atf23 }}" "${{ env.uboot23 }}" ;;
             2024) echo "${{ env.atf24 }}" "${{ env.uboot23 }}" ;;
-            2025) echo "${{ env.atf25 }}" "${{ env.uboot25 }}" ;;
-            2026) echo "${{ env.atf26 }}" "${{ env.uboot26 }}" ;;
-            SP1) echo "${{ env.atf24 }}" "${{ env.uboot25 }}" ;;
             *) echo "" "" ;;
           esac
         }
@@ -420,7 +338,6 @@ jobs:
         chmod +x ./build.sh
         mkdir -p output
 
-        VARIANT_INPUT="${{ github.event.inputs.VARIANT }}"
         EXTRA_INPUT="${{ github.event.inputs.EXTRA_OPTION }}"
         
         FIP_INPUT="${{ github.event.inputs.FIP_VERSION }}"
@@ -433,7 +350,7 @@ jobs:
 
         # Parse the list of versions to process based on FIP_INPUT
         if [ "$FIP_INPUT" = "all" ]; then
-          SUPPORTED_VERSIONS=("2022" "2023" "2024" "2025" "2026")
+          SUPPORTED_VERSIONS=("2022" "2023" "2024")
           echo "Detected 'all', will build: ${SUPPORTED_VERSIONS[*]}"
         else
           IFS=',' read -ra SUPPORTED_VERSIONS <<< "$FIP_INPUT"
@@ -512,19 +429,8 @@ jobs:
                 ;;
             esac
 
-            # VARIANT: effective only for 2025/2026; for other versions, force to default to avoid inconsistent descriptions (since build.sh only checks VARIANT for 2025/2026)
-            if [ "$version" = "2025" ] || [ "$version" = "2026" ]; then
-              VARIANT="$VARIANT_INPUT"
-              # variant ubootmod does not support multi_layout (consistent with build.sh logic), so we force disable it here to avoid inconsistent descriptions in the output
-              if [ "$VARIANT" = "ubootmod" ]; then
-                MULTI_LAYOUT=0
-              fi
-            else
-              VARIANT="default"
-            fi
-
             echo "Building FIP for version ${version} (SOC: $soc, model: $model_name)..."
-            BOARD="$model_name" VERSION=${version} VARIANT="$VARIANT" MULTI_LAYOUT="$MULTI_LAYOUT" FIXED_MTDPARTS="$FIXED_MTDPARTS" SILENT=Y ./build.sh 2>&1 | tee "output/build-${soc}-${model_name}-${version}.log"
+            BOARD="$model_name" VERSION=${version} MULTI_LAYOUT="$MULTI_LAYOUT" FIXED_MTDPARTS="$FIXED_MTDPARTS" SILENT=Y ./build.sh 2>&1 | tee "output/build-${soc}-${model_name}-${version}.log"
             build_rc=${PIPESTATUS[0]}
 
             if [ "$build_rc" -ne 0 ]; then
@@ -625,14 +531,6 @@ jobs:
         echo "- Versions: ${{ github.event.inputs.FIP_VERSION }}" >> release.txt
 
         echo "- Extra options: ${{ github.event.inputs.EXTRA_OPTION }}" >> release.txt
-
-        if [ "${{ github.event.inputs.VARIANT }}" = "nonmbm" ]; then
-          echo "- Enabled NONMBM variant (2025/2026 only)" >> release.txt
-        elif [ "${{ github.event.inputs.VARIANT }}" = "ubootmod" ]; then
-          echo "- Enabled UBOOTMOD variant (2025/2026 only)" >> release.txt
-        else
-          echo "- Using DEFAULT variant" >> release.txt
-        fi
 
         if [ "${{ github.event.inputs.EXTRA_OPTION }}" = "dis_fixed_mtdparts" ]; then
           echo "- FIXED_MTDPARTS disabled" >> release.txt
