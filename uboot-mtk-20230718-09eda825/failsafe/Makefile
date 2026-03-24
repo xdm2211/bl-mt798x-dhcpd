@@ -10,6 +10,8 @@ else ifeq ($(CONFIG_WEBUI_FAILSAFE_UI_NEW2),y)
 FAILSAFE_FSDATA_DIR := fsdata-new2
 else ifeq ($(CONFIG_WEBUI_FAILSAFE_UI_NEW3),y)
 FAILSAFE_FSDATA_DIR := fsdata-new3
+else ifeq ($(CONFIG_WEBUI_FAILSAFE_UI_MTK),y)
+FAILSAFE_FSDATA_DIR := fsdata-mtk
 endif
 
 obj-y += $(FAILSAFE_FSDATA_DIR)/
