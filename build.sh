@@ -215,6 +215,10 @@ if [ "$FSTHEME" = "new3" ] || [ "$FSTHEME" = "NEW3" ]; then
 	echo "Build u-boot with new-3 fstheme!"
 	echo "CONFIG_WEBUI_FAILSAFE_UI_NEW3=y" >> "$UBOOT_DIR/.config"
 fi
+if [ "$FSTHEME" = "mtk" ] || [ "$FSTHEME" = "MTK" ]; then
+	echo "Build u-boot with mtk fstheme!"
+	echo "CONFIG_WEBUI_FAILSAFE_UI_MTK=y" >> "$UBOOT_DIR/.config"
+fi
 
 make -C "$UBOOT_DIR" olddefconfig
 make -C "$UBOOT_DIR" clean
