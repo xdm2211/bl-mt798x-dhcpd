@@ -179,12 +179,22 @@ static int output_plain_file(struct httpd_response *response,
 	return ret;
 }
 
+#ifndef WEBUI_FAILSAFE_GIT_HASH
+#define WEBUI_FAILSAFE_GIT_HASH "unknown"
+#endif
+
+#ifndef WEBUI_FAILSAFE_GIT_DIRTY
+#define WEBUI_FAILSAFE_GIT_DIRTY 0
+#endif
+
 static void version_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
 	const char *build_variant;
+	const char *git_hash = WEBUI_FAILSAFE_GIT_HASH;
 	static char version_buf[512];
+	bool dirty = !!WEBUI_FAILSAFE_GIT_DIRTY;
 
 	if (status != HTTP_CB_NEW)
 		return;
@@ -192,12 +202,20 @@ static void version_handler(enum httpd_uri_handler_status status,
 	response->status = HTTP_RESP_STD;
 
 	build_variant = CONFIG_WEBUI_FAILSAFE_BUILD_VARIANT;
+	if (!git_hash || !git_hash[0])
+		git_hash = "unknown";
+
 	if (build_variant && build_variant[0]) {
-		snprintf(version_buf, sizeof(version_buf), "%s %s",
-			 version_string, build_variant);
+		snprintf(version_buf, sizeof(version_buf),
+			 "%s %s%s %s",
+			 version_string, git_hash, dirty ? "-dirty" : "",
+			 build_variant);
 		response->data = version_buf;
 	} else {
-		response->data = version_string;
+		snprintf(version_buf, sizeof(version_buf),
+			 "%s %s%s",
+			 version_string, git_hash, dirty ? "-dirty" : "");
+		response->data = version_buf;
 	}
 	response->size = strlen(response->data);
 
